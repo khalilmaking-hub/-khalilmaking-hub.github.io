@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SalesOS · AI Sales Operating System</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+<script>tailwind.config={theme:{extend:{colors:{bg:'#0f0b1e',card:'#1a1530',ac:'#22d3ee'},fontFamily:{sans:['Inter','system-ui','sans-serif']}}}}</script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%}body{background:radial-gradient(circle at 20% 0,#251a4a,#0f0b1e 55%);color:#e8e6f5;font-family:Inter,system-ui,sans-serif}
+.glass{background:rgba(26,21,48,.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08)}
+.sk{background:linear-gradient(90deg,#251f40,#2f2852,#251f40);background-size:200% 100%;animation:sh 1.2s infinite;border-radius:8px}@keyframes sh{to{background-position:-200% 0}}
+:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
+.side,.panel{transition:transform .25s}.side{transform:translateX(-100%)}[dir=rtl] .side{transform:translateX(100%)}.side.open,.panel.open{transform:none!important}
+.panel{transform:translateX(100%)}[dir=rtl] .panel{transform:translateX(-100%)}
+@media(min-width:768px){.side{transform:none!important;position:static!important}}
+.kc{transition:transform .15s,border-color .15s}.kc:hover{border-color:#22d3ee66;transform:translateY(-2px)}.over{outline:2px dashed #22d3ee88}
+.fade{animation:f .4s}@keyframes f{from{opacity:0;transform:translateY(-6px)}}
+input,select,textarea{background:#120e24;border:1px solid rgba(255,255,255,.12);border-radius:.5rem;padding:.4rem .6rem;font-size:.85rem;color:#e8e6f5}
+.btn{border-radius:.5rem;padding:.4rem .8rem;font-size:.85rem;font-weight:500;background:rgba(255,255,255,.07);transition:background .15s}.btn:hover{background:rgba(255,255,255,.14)}
+.pri{background:#22d3ee;color:#0f0b1e}.pri:hover{background:#67e8f9}.dng{background:rgba(239,68,68,.18);color:#fca5a5}
+</style>
+</head>
+<body><div id="app" class="h-full"></div><div id="toasts" class="fixed bottom-4 end-4 z-[90] space-y-2" aria-live="polite"></div>
+<script type="module">
+/* ===== config + i18n ===== */
+const USE_MOCK=true,BASE='/api';
+const I18N={en:{dash:'Dashboard',leads:'Leads',inbox:'Conversations',insights:'AI Insights',agent:'AI Agent',whatsapp:'WhatsApp',ads:'Ads Attribution',billing:'Billing',settings:'Settings',hot:'Hot Leads',conv:'Converted',pipe:'In Pipeline',rev:'Total Revenue',stream:'Live Lead Stream',c1:'Daily conversions',c2:'Leads by source',c3:'Revenue trend',today:'Today',d7:'7d',d30:'30d',custom:'Custom',search:'Search name or phone…',add:'Add Lead',exp:'Export CSV',board:'Board',list:'List',new:'New',qualified:'Qualified',proposal:'Proposal',won:'Closed Won',lost:'Lost',h1:'Hot',view:'View',save:'Save',cancel:'Cancel',del:'Delete Lead',out:'Log out',login:'Sign in',forgot:'Forgot password?',email:'Email',pass:'Password',empty:'Nothing here yet',note:'Add note',pause:'Pause AI (take over)',resume:'Resume AI',assign:'Assign agent',stage:'Stage',value:'Deal value',name:'Name',phone:'Phone',source:'Source',summary:'AI summary',intent:'Extracted intent',why:'Score reasoning',wa:'Open WhatsApp',mw:'Mark Won',ml:'Mark Lost',all:'All',owner:'Owner-only area',vs:'vs last period',chat:'Chat transcript',usage:'AI messages'},
+ur:{dash:'ڈیش بورڈ',leads:'لیڈز',inbox:'گفتگو',insights:'AI بصیرت',agent:'AI ایجنٹ',whatsapp:'واٹس ایپ',ads:'اشتہارات',billing:'بلنگ',settings:'سیٹنگز',hot:'ہاٹ لیڈز',conv:'کنورٹڈ',pipe:'پائپ لائن میں',rev:'کل آمدنی',stream:'لائیو لیڈ اسٹریم',c1:'روزانہ کنورژنز',c2:'ذریعہ کے لحاظ سے لیڈز',c3:'آمدنی کا رجحان',today:'آج',d7:'7 دن',d30:'30 دن',custom:'مخصوص',search:'نام یا فون تلاش کریں…',add:'لیڈ شامل کریں',exp:'CSV ایکسپورٹ',board:'بورڈ',list:'فہرست',new:'نئی',qualified:'اہل',proposal:'پیشکش',won:'کامیاب',lost:'ناکام',h1:'ہاٹ',view:'دیکھیں',save:'محفوظ کریں',cancel:'منسوخ',del:'لیڈ حذف کریں',out:'لاگ آؤٹ',login:'سائن اِن',forgot:'پاس ورڈ بھول گئے؟',email:'ای میل',pass:'پاس ورڈ',empty:'ابھی کچھ نہیں',note:'نوٹ شامل کریں',pause:'AI روکیں (خود سنبھالیں)',resume:'AI دوبارہ چلائیں',assign:'ایجنٹ تفویض کریں',stage:'مرحلہ',value:'ڈیل کی قیمت',name:'نام',phone:'فون',source:'ذریعہ',summary:'AI خلاصہ',intent:'نکالا گیا ارادہ',why:'اسکور کی وجہ',wa:'واٹس ایپ کھولیں',mw:'کامیاب کریں',ml:'ناکام کریں',all:'سب',owner:'صرف مالک کے لیے',vs:'پچھلے دور کے مقابلے',chat:'چیٹ ٹرانسکرپٹ',usage:'AI پیغامات'}};
+const S={tok:null,user:null,V:null,leads:[],view:'board',page:'dash',lang:'en',range:'7d',f:{q:'',src:'',score:'',agent:''},ch:[],timer:null};
+const store={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}},del(k){try{sessionStorage.removeItem(k)}catch(e){}}};
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const t=k=>I18N[S.lang][k]??I18N.en[k]??k;
+const loc=()=>S.lang==='ur'?'ur-PK':'en-GB';
+const money=n=>new Intl.NumberFormat(loc(),{style:'currency',currency:S.V.currency,maximumFractionDigits:0}).format(n);
+const when=ts=>{const m=Math.round((Date.now()-ts)/6e4);return m<1?'now':m<60?m+'m':m<1440?Math.round(m/60)+'h':Math.round(m/1440)+'d'};
+const clock=ts=>new Intl.DateTimeFormat(loc(),{timeZone:S.V.tz,hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}).format(ts);
+const icons=()=>window.lucide&&lucide.createIcons();
+const STAGES=['new','qualified','proposal','won','lost'],SRC={whatsapp:['message-circle','text-green-400'],facebook:['facebook','text-blue-400'],instagram:['instagram','text-pink-400'],website:['globe','text-cyan-300']};
+const SC={hot:'bg-red-500/15 text-red-300',new:'bg-slate-500/20 text-slate-300',qualified:'bg-cyan-500/15 text-cyan-300',proposal:'bg-amber-500/15 text-amber-300',won:'bg-green-500/15 text-green-300',lost:'bg-rose-500/15 text-rose-300'};
+const tag=l=>(l.stage==='new'||l.stage==='qualified')&&l.score>=80?'hot':l.stage;
+const badge=k=>`<span class="px-2 py-0.5 rounded-full text-xs font-medium ${SC[k]}">${t(k==='hot'?'h1':k)}</span>`;
+const sc=n=>n>=75?'text-green-300 bg-green-500/15':n>=50?'text-amber-300 bg-amber-500/15':'text-red-300 bg-red-500/15';
+const srcIco=s=>`<span class="h-8 w-8 shrink-0 rounded-lg bg-white/5 grid place-items-center ${SRC[s][1]}"><i data-lucide="${SRC[s][0]}" class="h-4 w-4"></i></span>`;
+function toast(m,k='err'){const d=document.createElement('div');d.className=`glass fade px-4 py-2 rounded-lg text-sm border-s-4 ${k==='err'?'border-red-400':'border-green-400'}`;d.setAttribute('role','alert');d.textContent=m;$('#toasts').append(d);setTimeout(()=>d.remove(),4000)}
+function confirmBox(msg){return new Promise(r=>{const d=document.createElement('div');d.className='fixed inset-0 z-[80] bg-black/60 grid place-items-center p-4';d.innerHTML=`<div role="alertdialog" aria-modal="true" class="glass rounded-2xl p-5 max-w-sm w-full"><p class="mb-4">${esc(msg)}</p><div class="flex gap-2 justify-end"><button class="btn" data-v="0">${t('cancel')}</button><button class="btn dng" data-v="1">OK</button></div></div>`;d.onclick=e=>{const b=e.target.closest('[data-v]');if(b||e.target===d){d.remove();r(b?.dataset.v==='1')}};document.body.append(d);$('[data-v="0"]',d).focus()})}
+
+/* ===== api.js layer (mock now, FastAPI later) ===== */
+const sleep=f=>new Promise((res,rej)=>setTimeout(()=>{try{res(f())}catch(e){rej(e)}},300));
+async function call(method,path,body,mock){
+  if(USE_MOCK)return sleep(mock);
+  const r=await fetch(BASE+path,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+S.tok},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){logout();throw new Error('Session expired')}
+  if(!r.ok)throw new Error(await r.text()||r.status);return r.json();}
+const NM=['Ayesha Khan','Bilal Ahmed','Sana Malik','Hamza Sheikh','Fatima Noor','Usman Ali','Zara Hussain','Imran Qureshi','Hira Baig','Danish Raza','Mehwish Iqbal','Talha Siddiqui','Noor Fatima','Faisal Mehmood'],PR=['Solar Panel 5kW','Bridal Collection','Website Package','Smart Watch','Furniture Set'],AG=['Ali','Sara','Owner'],SR=Object.keys(SRC);
+const mk=(i,min)=>{const n=NM[i%NM.length],p=PR[i%5],v=(1+(i*7)%9)*15000,now=Date.now()-min*6e4;return{id:'L'+(1000+i),name:n,phone:'+92 3'+(10+i%40)+' '+(1234567+i*91113).toString().slice(0,7),source:SR[i%4],campaign:['Eid Sale','Brand Reach','Retarget','Organic'][i%4],stage:['new','new','qualified','proposal','won','qualified','lost','proposal','new','won','qualified','new','proposal','lost'][i%14],value:v,score:35+(i*37)%65,agent:AG[i%3],ts:now,tags:[p,i%2?'Repeat':'First-time'],ai:true,notes:[],
+ why:`Asked price twice, mentioned budget, replies within ${2+i%5} min.`,summary:`${n.split(' ')[0]} is interested in ${p}, asked about installments and wants a quote this week.`,intent:{intent:'Purchase',budget:money0(v),product:p},
+ chat:[{r:'c',m:`Assalam o Alaikum, ${p} ki price kya hai?`,ts:now-3e5},{r:'ai',m:`Walaikum Assalam ${n.split(' ')[0]}! ${p} starts at PKR ${v.toLocaleString()}. Shall I send a quote?`,ts:now-27e4},{r:'c',m:'Installment ho sakti hai?',ts:now-12e4},{r:'ai',m:'Yes, 6-month 0% installment is available. Want me to reserve one?',ts:now-9e4}]}};
+const money0=v=>'PKR '+v.toLocaleString();
+const DB=NM.map((_,i)=>mk(i,5+i*37));let seq=20;
+const rnd=(a,i)=>Math.round(a+Math.abs(Math.sin(i*1.7))*a*.6);
+const api={
+ login:(email,password)=>call('POST','/auth/login',{email,password},()=>{if(!email||!password)throw new Error('Invalid credentials');return{token:'mock.jwt',user:{email,role:/agent/i.test(email)?'agent':'owner'},vendor:{name:'Demo User',plan:'Pro',used:320,limit:1000,currency:'PKR',tz:'Asia/Karachi'}}}),
+ stats:r=>call('GET','/stats?range='+r,null,()=>{const n={today:6,'7d':7,'30d':10,custom:8}[r],m={today:1,'7d':5,'30d':20,custom:9}[r],L=Array.from({length:n},(_,i)=>r==='today'?`${i*4}:00`:`D${i+1}`);return{labels:L,daily:L.map((_,i)=>rnd(4,i)),revenue:L.map((_,i)=>rnd(90,i)*1000),sources:SR.map((_,i)=>DB.filter(l=>l.source===SR[i]).length*m),cards:{hot:[DB.filter(l=>tag(l)==='hot').length*m,12.4],conv:[DB.filter(l=>l.stage==='won').length*m,8.1],pipe:[DB.filter(l=>['qualified','proposal'].includes(l.stage)).length*m,-3.2],rev:[DB.filter(l=>l.stage==='won').reduce((a,l)=>a+l.value,0)*m,15.7]}}}),
+ leads:()=>call('GET','/leads',null,()=>DB.map(l=>({...l}))),
+ lead:id=>call('GET','/leads/'+id,null,()=>({...DB.find(l=>l.id===id)})),
+ add:d=>call('POST','/leads',d,()=>{const l=mk(seq++,0);Object.assign(l,d,{stage:'new',chat:[],notes:[],ts:Date.now()});DB.unshift(l);return{...l}}),
+ patch:(id,d)=>call('PATCH','/leads/'+id,d,()=>{const l=DB.find(x=>x.id===id);Object.assign(l,d);l.ts=Date.now();return{...l}}),
+ note:(id,text)=>call('POST',`/leads/${id}/notes`,{text},()=>{const l=DB.find(x=>x.id===id);l.notes.unshift({ts:Date.now(),text});return{...l}}),
+ del:id=>call('DELETE','/leads/'+id,null,()=>{DB.splice(DB.findIndex(l=>l.id===id),1);return{ok:true}}),
+ stream:()=>call('GET','/stream',null,()=>{const l=mk(seq++,0);l.stage='new';DB.unshift(l);return{...l}})};
+
+/* ===== auth / shell ===== */
+function logout(){store.del('tok');clearInterval(S.timer);S.tok=null;login()}
+function login(){$('#app').innerHTML=`<div class="h-full grid place-items-center p-4"><form id="lf" class="glass rounded-2xl p-6 w-full max-w-sm space-y-3"><h1 class="text-xl font-bold flex items-center gap-2"><i data-lucide="sparkles" class="text-ac"></i>SalesOS</h1><label class="block text-sm">${t('email')}<input id="em" type="email" required class="w-full mt-1" autocomplete="username"></label><label class="block text-sm">${t('pass')}<input id="pw" type="password" required class="w-full mt-1" autocomplete="current-password"></label><button class="btn pri w-full py-2">${t('login')}</button><button type="button" id="fg" class="text-xs text-ac">${t('forgot')}</button><p class="text-xs text-slate-400">Demo: any email/password. Include “agent” in the email for the Agent role.</p></form></div>`;icons();
+ $('#fg').onclick=()=>toast('Reset link sent (mock)','ok');
+ $('#lf').onsubmit=async e=>{e.preventDefault();try{const r=await api.login($('#em').value,$('#pw').value);S.tok=r.token;store.set('tok',r.token);S.user=r.user;S.V=r.vendor;boot()}catch(x){toast(x.message)}}}
+function nav(){const it=[['dash','layout-dashboard'],['leads','kanban'],['inbox','message-square'],['insights','bar-chart-3'],['agent','bot'],['whatsapp','phone'],['ads','megaphone']];if(S.user.role==='owner')it.push(['billing','credit-card'],['settings','settings']);return it.map(([k,i])=>`<button data-go="${k}" aria-label="${t(k)}" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-start hover:bg-white/10 ${S.page===k?'bg-ac/15 text-ac':''}"><i data-lucide="${i}" class="h-4 w-4"></i>${t(k)}</button>`).join('')}
+function shell(){const V=S.V,pc=Math.round(V.used/V.limit*100);document.documentElement.dir=S.lang==='ur'?'rtl':'ltr';document.documentElement.lang=S.lang;
+ $('#app').innerHTML=`<div class="flex h-full"><aside id="side" class="side fixed md:static z-40 inset-y-0 start-0 w-64 glass flex flex-col p-4 bg-card"><div class="flex items-center gap-2 mb-6 font-bold text-lg"><span class="h-8 w-8 rounded-lg bg-ac/20 text-ac grid place-items-center"><i data-lucide="sparkles" class="h-4 w-4"></i></span>SalesOS</div><nav class="space-y-1 flex-1" aria-label="Main">${nav()}</nav>
+ <div class="border-t border-white/10 pt-3 space-y-2"><div class="flex items-center gap-2"><span class="h-9 w-9 rounded-full bg-gradient-to-br from-ac to-purple-500 grid place-items-center font-bold text-bg">${esc(V.name[0])}</span><div class="min-w-0 flex-1"><p class="truncate text-sm font-medium">${esc(V.name)}</p><p class="text-xs text-slate-400 capitalize">${S.user.role}</p></div><span class="text-[10px] px-2 py-0.5 rounded-full bg-ac/20 text-ac">${V.plan}</span></div><div><div class="flex justify-between text-xs text-slate-400"><span>${t('usage')}</span><span>${V.used}/${V.limit}</span></div><div class="h-1.5 bg-white/10 rounded mt-1" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><div class="h-full bg-ac rounded" style="width:${pc}%"></div></div></div></div></aside>
+ <div id="scrim" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden"></div>
+ <div class="flex-1 min-w-0 flex flex-col"><header class="flex items-center gap-2 p-3 border-b border-white/10"><button id="ham" class="btn md:hidden" aria-label="Menu"><i data-lucide="menu" class="h-4 w-4"></i></button><h2 class="font-semibold flex-1">${t(S.page)}</h2><button id="lg" class="btn" aria-label="Language">${S.lang==='en'?'اردو':'EN'}</button><button id="lo" class="btn" aria-label="${t('out')}"><i data-lucide="log-out" class="h-4 w-4"></i></button></header><main id="main" class="flex-1 overflow-auto p-3 md:p-5"></main></div></div><div id="panel" class="panel fixed inset-y-0 end-0 z-50 w-full max-w-md glass bg-card overflow-auto" role="dialog" aria-label="Lead detail"></div>`;
+ const side=$('#side'),sc=$('#scrim'),tog=o=>{side.classList.toggle('open',o);sc.classList.toggle('hidden',!o)};
+ $('#ham').onclick=()=>tog(true);sc.onclick=()=>tog(false);$('#lo').onclick=logout;
+ $('#lg').onclick=()=>{S.lang=S.lang==='en'?'ur':'en';shell();route()};
+ $$('[data-go]').forEach(b=>b.onclick=()=>{S.page=b.dataset.go;shell();route()});icons()}
+function route(){clearInterval(S.timer);const m=$('#main');if(S.page==='dash')dash(m);else if(S.page==='leads')leadsPage(m);else if(PG[S.page]&&!((S.page==='billing'||S.page==='settings')&&S.user.role!=='owner'))PG[S.page](m);else m.innerHTML=`<div class="glass rounded-2xl p-10 text-center text-slate-400"><i data-lucide="lock" class="mx-auto mb-2"></i>${t('owner')}</div>`;icons()}
+function boot(){shell();route()}
+
+/* ===== dashboard ===== */
+const sk=h=>`<div class="sk ${h}"></div>`;
+async function dash(m){
+ m.innerHTML=`<div class="flex flex-wrap items-center gap-2 mb-4" role="group">${['today','7d','30d','custom'].map(r=>`<button data-r="${r}" class="btn ${S.range===r?'pri':''}">${t(r==='7d'?'d7':r==='30d'?'d30':r)}</button>`).join('')}${S.range==='custom'?'<input type="date" aria-label="From"><input type="date" aria-label="To">':''}</div>
+ <div id="cards" class="grid grid-cols-2 lg:grid-cols-4 gap-3">${sk('h-24')+sk('h-24')+sk('h-24')+sk('h-24')}</div>
+ <div class="grid lg:grid-cols-3 gap-3 mt-3"><div class="glass rounded-2xl p-4"><h3 class="text-sm mb-2">${t('c1')}</h3><div class="relative h-52"><canvas id="c1"></canvas></div></div><div class="glass rounded-2xl p-4"><h3 class="text-sm mb-2">${t('c2')}</h3><div class="relative h-52"><canvas id="c2"></canvas></div></div><div class="glass rounded-2xl p-4"><h3 class="text-sm mb-2">${t('c3')}</h3><div class="relative h-52"><canvas id="c3"></canvas></div></div></div>
+ <div class="glass rounded-2xl p-4 mt-3"><h3 class="text-sm mb-2 flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>${t('stream')}</h3><ul id="stream" class="divide-y divide-white/5 max-h-80 overflow-auto"></ul></div>`;
+ $$('[data-r]',m).forEach(b=>b.onclick=()=>{S.range=b.dataset.r;dash(m);icons()});
+ try{const d=await api.stats(S.range);if(S.page!=='dash')return;
+  const C=[['hot','flame',d.cards.hot[0]],['conv','trophy',d.cards.conv[0]],['pipe','funnel',d.cards.pipe[0]],['rev','wallet',money(d.cards.rev[0])]],dl=['hot','conv','pipe','rev'];
+  $('#cards').innerHTML=C.map(([k,i,v],x)=>{const p=d.cards[k][1];return`<div class="glass rounded-2xl p-4"><div class="flex justify-between text-xs text-slate-400">${t(k)}<i data-lucide="${i}" class="h-4 w-4 text-ac"></i></div><p class="text-xl md:text-2xl font-bold mt-1">${v}</p><p class="text-xs mt-1 ${p>=0?'text-green-400':'text-red-400'}">${p>=0?'▲':'▼'} ${Math.abs(p)}% ${t('vs')}</p></div>`}).join('');
+  Chart.defaults.color='#a8a2c4';S.ch.forEach(c=>c.destroy());const g={grid:{color:'rgba(255,255,255,.06)'}},o={maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:g,y:g}};
+  S.ch=[new Chart($('#c1'),{type:'line',data:{labels:d.labels,datasets:[{data:d.daily,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.15)',fill:true,tension:.4}]},options:o}),
+  new Chart($('#c2'),{type:'doughnut',data:{labels:SR,datasets:[{data:d.sources,backgroundColor:['#4ade80','#60a5fa','#f472b6','#22d3ee'],borderWidth:0}]},options:{maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom'}}}}),
+  new Chart($('#c3'),{type:'bar',data:{labels:d.labels,datasets:[{data:d.revenue,backgroundColor:'#a78bfa',borderRadius:4}]},options:o})];
+  const L=await api.leads();$('#stream').innerHTML=L.sort((a,b)=>b.ts-a.ts).slice(0,8).map(sRow).join('');icons();
+  S.timer=setInterval(async()=>{try{const l=await api.stream();$('#stream')?.insertAdjacentHTML('afterbegin',sRow(l,1));S.leads=[];icons()}catch(e){}},8000);
+ }catch(e){toast(e.message)}}
+const sRow=(l,n)=>`<li class="${n?'fade':''}"><button data-view="${l.id}" class="w-full flex items-center gap-3 py-2 text-start hover:bg-white/5 rounded-lg px-1">${srcIco(l.source)}<span class="flex-1 min-w-0"><span class="block truncate text-sm">${esc(l.name)}</span><span class="block text-xs text-slate-400">${esc(l.campaign)} · ${when(l.ts)}</span></span>${badge(tag(l))}</button></li>`;
+
+/* ===== leads: kanban + list ===== */
+const fl=()=>{const f=S.f,q=f.q.toLowerCase();return S.leads.filter(l=>(!q||l.name.toLowerCase().includes(q)||l.phone.includes(q))&&(!f.src||l.source===f.src)&&(!f.agent||l.agent===f.agent)&&(!f.score||(f.score==='hi'?l.score>=75:f.score==='md'?l.score>=50&&l.score<75:l.score<50)))};
+const kc=l=>`<div draggable="true" data-id="${l.id}" class="kc glass rounded-xl p-3 cursor-grab"><div class="flex items-center gap-2">${srcIco(l.source)}<div class="min-w-0 flex-1"><p class="truncate text-sm font-medium">${esc(l.name)}</p><p class="text-xs text-slate-400" dir="ltr">${esc(l.phone)}</p></div><span class="text-xs px-1.5 py-0.5 rounded ${sc(l.score)}" title="AI score">${l.score}</span></div><div class="flex items-center justify-between mt-2 text-xs"><b>${money(l.value)}</b><span class="text-slate-400">${when(l.ts)}</span></div><button data-view="${l.id}" class="btn w-full mt-2 text-xs">${t('view')}</button></div>`;
+function paint(){const L=fl(),b=$('#body');if(!b)return;
+ if(S.view==='board')b.innerHTML=`<div class="flex gap-3 overflow-x-auto pb-3 snap-x">${STAGES.map(s=>{const c=L.filter(l=>l.stage===s);return`<section data-col="${s}" class="snap-start shrink-0 w-72 glass rounded-2xl p-2" aria-label="${t(s)}"><h3 class="flex justify-between px-2 py-1 text-sm">${badge(s)}<span class="text-slate-400">${c.length} · ${money(c.reduce((a,l)=>a+l.value,0))}</span></h3><div class="space-y-2 min-h-[80px]">${c.map(kc).join('')||`<p class="text-xs text-slate-500 text-center py-6">${t('empty')}</p>`}</div></section>`}).join('')}</div>`;
+ else b.innerHTML=L.length?`<div class="glass rounded-2xl overflow-x-auto"><table class="w-full text-sm min-w-[640px]"><thead class="text-slate-400 text-xs"><tr>${['name','phone','source','stage','value','agent'].map(h=>`<th class="p-3 text-start">${t(h)}</th>`).join('')}<th></th></tr></thead><tbody>${L.map(l=>`<tr class="border-t border-white/5 hover:bg-white/5"><td class="p-3">${esc(l.name)}</td><td dir="ltr">${esc(l.phone)}</td><td>${l.source}</td><td>${badge(tag(l))}</td><td>${money(l.value)}</td><td>${esc(l.agent)}</td><td><button class="btn" data-view="${l.id}">${t('view')}</button></td></tr>`).join('')}</tbody></table></div>`:`<p class="text-center text-slate-500 py-16">${t('empty')}</p>`;icons()}
+async function leadsPage(m){
+ const f=S.f,opt=(a,v)=>`<option value="">${t('all')}</option>`+a.map(x=>`<option ${v===x?'selected':''}>${x}</option>`).join('');
+ m.innerHTML=`<div class="flex flex-wrap gap-2 mb-3 items-center"><input id="q" type="search" placeholder="${t('search')}" value="${esc(f.q)}" aria-label="Search" class="flex-1 min-w-[160px]"><select id="fs" aria-label="${t('source')}">${opt(SR,f.src)}</select><select id="fa" aria-label="${t('assign')}">${opt(AG,f.agent)}</select><select id="fc" aria-label="Score"><option value="">${t('all')}</option><option value="hi" ${f.score==='hi'?'selected':''}>75+</option><option value="md" ${f.score==='md'?'selected':''}>50–74</option><option value="lo" ${f.score==='lo'?'selected':''}>&lt;50</option></select><button id="vt" class="btn" aria-label="Toggle view"><i data-lucide="${S.view==='board'?'list':'kanban'}" class="h-4 w-4"></i></button><button id="ex" class="btn"><i data-lucide="download" class="h-4 w-4 inline"></i> ${t('exp')}</button><button id="ad" class="btn pri">+ ${t('add')}</button></div><div id="body">${sk('h-64')}</div>`;icons();
+ $('#q').oninput=e=>{f.q=e.target.value;paint()};$('#fs').onchange=e=>{f.src=e.target.value;paint()};$('#fa').onchange=e=>{f.agent=e.target.value;paint()};$('#fc').onchange=e=>{f.score=e.target.value;paint()};
+ $('#vt').onclick=()=>{S.view=S.view==='board'?'list':'board';leadsPage(m)};$('#ad').onclick=addModal;
+ $('#ex').onclick=()=>{const L=fl(),c=['id','name','phone','source','stage','value','score','agent'],csv=[c.join(','),...L.map(l=>c.map(k=>JSON.stringify(l[k]??'')).join(','))].join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='leads.csv';a.click();toast(`${L.length} rows exported`,'ok')};
+ try{S.leads=await api.leads();paint()}catch(e){$('#body').innerHTML=`<p class="text-red-300 text-center py-10">${esc(e.message)}</p>`;toast(e.message)}}
+function addModal(){const d=document.createElement('div');d.className='fixed inset-0 z-[80] bg-black/60 grid place-items-center p-4';d.innerHTML=`<form class="glass bg-card rounded-2xl p-5 w-full max-w-sm space-y-3" role="dialog" aria-modal="true"><h3 class="font-semibold">${t('add')}</h3><input name="name" required placeholder="${t('name')}" class="w-full"><input name="phone" required placeholder="+92 3xx xxxxxxx" class="w-full" dir="ltr"><select name="source" class="w-full">${SR.map(s=>`<option>${s}</option>`).join('')}</select><input name="value" type="number" min="0" placeholder="${t('value')}" class="w-full"><div class="flex gap-2 justify-end"><button type="button" class="btn" data-x>${t('cancel')}</button><button class="btn pri">${t('save')}</button></div></form>`;
+ d.onclick=e=>{if(e.target===d||e.target.dataset.x!==undefined)d.remove()};
+ d.firstChild.onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));f.value=+f.value||0;try{S.leads.unshift(await api.add(f));d.remove();paint();toast('Lead added','ok')}catch(x){toast(x.message)}};document.body.append(d);$('input',d).focus()}
+
+/* drag and drop with optimistic update + rollback */
+document.addEventListener('dragstart',e=>{const c=e.target.closest?.('[data-id]');if(c){e.dataTransfer.setData('text/plain',c.dataset.id)}});
+document.addEventListener('dragover',e=>{const c=e.target.closest?.('[data-col]');if(c){e.preventDefault();$$('.over').forEach(x=>x.classList.remove('over'));c.classList.add('over')}});
+document.addEventListener('drop',async e=>{const c=e.target.closest?.('[data-col]');$$('.over').forEach(x=>x.classList.remove('over'));if(!c)return;e.preventDefault();
+ const l=S.leads.find(x=>x.id===e.dataTransfer.getData('text/plain'));if(!l||l.stage===c.dataset.col)return;await setStage(l,c.dataset.col)});
+async function setStage(l,s){const old=l.stage;l.stage=s;paint();try{await api.patch(l.id,{stage:s})}catch(e){l.stage=old;paint();toast('Move failed, reverted: '+e.message)}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)openLead(b.dataset.view)});
+
+/* ===== lead detail slide-over ===== */
+async function openLead(id){const p=$('#panel');p.classList.add('open');p.innerHTML=`<div class="p-4 space-y-3">${sk('h-8')+sk('h-32')+sk('h-48')}</div>`;
+ try{draw(await api.lead(id))}catch(e){toast(e.message);p.classList.remove('open')}}
+function draw(l){const p=$('#panel'),up=async d=>{try{const r=await api.patch(l.id,d);Object.assign(l,r);const x=S.leads.find(y=>y.id===l.id);x&&Object.assign(x,r);draw(l);paint()}catch(e){toast(e.message)}};
+ const sel=(a,v,id)=>`<select id="${id}" class="w-full">${a.map(x=>`<option value="${x}" ${v===x?'selected':''}>${STAGES.includes(x)?t(x):x}</option>`).join('')}</select>`;
+ p.innerHTML=`<div class="p-4 space-y-4"><div class="flex items-start gap-2"><div class="flex-1"><h2 class="text-lg font-bold">${esc(l.name)}</h2><p class="text-sm text-slate-400" dir="ltr">${esc(l.phone)}</p></div>${badge(tag(l))}<button id="cl" class="btn" aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button></div>
+ <div class="grid grid-cols-2 gap-2 text-sm"><div class="glass rounded-lg p-2">${t('source')}<br><b class="capitalize">${l.source}</b></div><div class="glass rounded-lg p-2">Campaign<br><b>${esc(l.campaign)}</b></div><div class="glass rounded-lg p-2">${t('value')}<br><b>${money(l.value)}</b></div><div class="glass rounded-lg p-2">AI score<br><b class="${sc(l.score)} px-1.5 rounded">${l.score}</b></div></div>
+ <div class="flex flex-wrap gap-1">${l.tags.map(x=>`<span class="text-xs px-2 py-0.5 rounded-full bg-white/10">${esc(x)}</span>`).join('')}</div>
+ <div class="flex flex-wrap gap-2"><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/${l.phone.replace(/\D/g,'')}">${t('wa')}</a><button id="mw" class="btn">${t('mw')}</button><button id="ml" class="btn">${t('ml')}</button><button id="ai" class="btn ${l.ai?'':'dng'}">${l.ai?t('pause'):t('resume')}</button></div>
+ <div class="grid grid-cols-2 gap-2 text-xs"><label>${t('stage')}${sel(STAGES,l.stage,'st')}</label><label>${t('assign')}${sel(AG,l.agent,'ag')}</label></div>
+ <div class="flex gap-2"><input id="vv" type="number" value="${l.value}" aria-label="${t('value')}" class="flex-1"><button id="sv" class="btn">${t('save')}</button></div>
+ <div class="glass rounded-xl p-3 text-sm space-y-1"><h4 class="font-semibold text-ac">${t('summary')}</h4><p>${esc(l.summary)}</p><p class="text-xs text-slate-400">${t('intent')}: ${esc(l.intent.intent)} · ${esc(l.intent.budget)} · ${esc(l.intent.product)}</p><p class="text-xs text-slate-400">${t('why')}: ${esc(l.why)}</p></div>
+ <div><h4 class="text-sm font-semibold mb-2">${t('chat')}</h4><div class="space-y-2" dir="ltr">${l.chat.map(c=>`<div class="flex ${c.r!=='c'?'justify-end':''}"><div class="max-w-[80%] rounded-2xl px-3 py-2 text-sm ${c.r!=='c'?'bg-ac/20':'bg-white/10'}"><p class="text-[10px] opacity-60">${c.r==='c'?'Customer':c.r==='ai'?'AI Agent':'Agent'}</p>${esc(c.m)}<p class="text-[10px] opacity-50 mt-1">${clock(c.ts)}</p></div></div>`).join('')||`<p class="text-xs text-slate-500">${t('empty')}</p>`}</div></div>
+ <div><div class="flex gap-2"><input id="nt" class="flex-1" placeholder="${t('note')}" aria-label="${t('note')}"><button id="na" class="btn">+</button></div><ul class="mt-2 space-y-1 text-sm">${l.notes.map(n=>`<li class="glass rounded-lg p-2">${esc(n.text)}<span class="block text-[10px] text-slate-500">${clock(n.ts)}</span></li>`).join('')}</ul></div>
+ <button id="dl" class="btn dng w-full">${t('del')}</button></div>`;icons();
+ $('#cl').onclick=()=>p.classList.remove('open');$('#st').onchange=e=>up({stage:e.target.value});$('#ag').onchange=e=>up({agent:e.target.value});$('#sv').onclick=()=>up({value:+$('#vv').value||0});
+ $('#mw').onclick=()=>up({stage:'won'});$('#ml').onclick=()=>up({stage:'lost'});$('#ai').onclick=()=>up({ai:!l.ai});
+ $('#na').onclick=async()=>{const v=$('#nt').value.trim();if(!v)return;try{Object.assign(l,await api.note(l.id,v));draw(l)}catch(e){toast(e.message)}};
+ $('#dl').onclick=async()=>{if(!await confirmBox(`${t('del')}: ${l.name}?`))return;try{await api.del(l.id);S.leads=S.leads.filter(x=>x.id!==l.id);p.classList.remove('open');paint();toast('Deleted','ok')}catch(e){toast(e.message)}}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#panel')?.classList.remove('open')});
+
+/* ===== pages 4-11: mock backend additions ===== */
+const PG={},U={};
+const NICHES={'Real Estate':'qualify buyers by budget, area, bedrooms and timeline; offer site visits','Clothing':'help with sizes, colors and delivery; upsell matching items','Beauty Parlor':'share service prices and book appointments','Restaurant':'share the menu, take orders and reservations','Clinic':'book appointments and share doctor timings; never give diagnoses','Education':'explain courses, fees and batches; book demo classes','Custom':'answer questions and qualify the lead'};
+const tpl=n=>`You are the WhatsApp sales assistant for {{business_name}}. About us: {{description}}\nYour job: ${NICHES[n]}.\nCatalog:\n{{products}}\nFAQs:\n{{faqs}}\nWorking hours: {{hours}}. Tone: {{tone}}.\nQualification questions: {{qualification}}\nHand off to a human when: {{handoff}}.\nNever discuss: {{forbidden}}.`;
+const fill=c=>c.prompt.replace(/\{\{(\w+)\}\}/g,(_,k)=>({business_name:c.bname,description:c.desc,products:c.items.map(i=>`- ${i.name}: PKR ${i.price} - ${i.desc}`).join('\n'),faqs:c.faqs,hours:c.hours,tone:c.tone,qualification:c.qual,handoff:c.handoff,forbidden:c.forbid})[k]??`{{${k}}}`);
+DB.forEach((l,i)=>{if(i%3===0)U[l.id]=1+i%4;if(i===1||i===5)l.ai=false});
+const MEM={cfg:{niche:'Clothing',bname:'Demo Boutique',desc:'Lawn and formal wear boutique in Karachi.',items:[{name:'Lawn Suit 3pc',price:6500,desc:'Printed lawn, 3 pieces',img:''},{name:'Formal Kurta',price:9800,desc:'Embroidered chiffon',img:''}],faqs:'Q: Delivery time? A: 2-4 working days.\nQ: Returns? A: 7-day exchange.',hours:'10:00-20:00, Mon-Sat',tone:'Friendly',langs:'English, Urdu',qual:'What is your budget? Which size do you need?',handoff:'Refund requests, angry customers, orders above PKR 100,000',forbid:'Politics, religion, competitor pricing',prompt:tpl('Clothing')},ver:[],
+ wa:{status:'disconnected',phoneId:'',waba:'',token:'',webhook:'https://api.yourdomain.com/webhooks/whatsapp',verify:'vt_'+Math.random().toString(36).slice(2,10),templates:[{n:'order_confirmation',s:'APPROVED',q:'High'},{n:'abandoned_cart',s:'PENDING',q:'Medium'},{n:'promo_eid',s:'REJECTED',q:'Low'}]},
+ st:{name:'Demo Owner',email:'owner@demo.pk',business:'Demo User',phone:'+92 300 1234567',tz:'Asia/Karachi',currency:'PKR',lang:'en',notif:[true,true,false],team:[{email:'owner@demo.pk',role:'owner'},{email:'ali@demo.pk',role:'agent'}],keys:['sk_live_a1b2c3d4e5f6g7h8']},
+ ads:{connected:true,campaigns:[{n:'Eid Sale',src:'facebook',spend:85000,leads:210,conv:34,rev:510000},{n:'Brand Reach',src:'instagram',spend:42000,leads:95,conv:11,rev:132000},{n:'Retarget Cart',src:'facebook',spend:18000,leads:60,conv:21,rev:315000},{n:'Reels Test',src:'instagram',spend:30000,leads:40,conv:3,rev:39000}]},
+ ins:{questions:[['Price / installment?',48],['Delivery time',31],['Warranty',22],['Location',15]],objections:[['Too expensive',34],['Need to ask family',19],['Found cheaper',12]],hours:[2,1,1,0,0,1,3,6,9,12,14,13,11,10,12,15,17,19,22,18,12,8,5,3],funnel:[['Leads',1240],['Qualified',640],['Proposal',310],['Won',142]],acc:92,handoff:11,recs:[['Offer installments earlier','34% of chats stall at the price question. Mention 0% plans in the first reply.'],['Staff humans 5-9 PM','Peak hours have the most handoffs and slowest human replies.'],['Add a warranty FAQ','22 questions this week had no catalog answer.']]}};
+Object.assign(api,{
+ convs:()=>call('GET','/leads?inbox=1',null,()=>DB.map(l=>({...l,last:(l.chat.at(-1)||{m:'No messages'}).m,unread:U[l.id]||0}))),
+ msgs:id=>call('GET',`/leads/${id}/messages`,null,()=>{U[id]=0;return[...DB.find(l=>l.id===id).chat]}),
+ send:(id,text)=>call('POST','/messages',{lead_id:id,text},()=>{const l=DB.find(x=>x.id===id);l.chat.push({r:'human',m:text,ts:Date.now()});l.ai=false;l.ts=Date.now();return{...l}}),
+ poll:()=>call('GET','/conversations/poll',null,()=>{const l=DB.filter(x=>x.ai)[Math.floor(Math.random()*6)];if(l){l.chat.push({r:'c',m:'Delivery kitne din mein hogi?',ts:Date.now()});U[l.id]=(U[l.id]||0)+1}return 1}),
+ insights:()=>call('GET','/insights',null,()=>MEM.ins),
+ aiCfg:()=>call('GET','/ai-config',null,()=>({cfg:structuredClone(MEM.cfg),versions:MEM.ver.map(v=>({...v}))})),
+ saveAi:cfg=>call('PUT','/ai-config',cfg,()=>{MEM.cfg=structuredClone(cfg);MEM.ver.unshift({ts:Date.now(),cfg:structuredClone(cfg)});return{ok:true}}),
+ aiTest:(cfg,m)=>call('POST','/ai-config/test',{cfg,message:m},()=>{const q=m.toLowerCase(),i=cfg.items.find(x=>x.name&&q.includes(x.name.toLowerCase().split(' ')[0])),p=cfg.items.map(x=>x.price),h=cfg.tone==='Urdu-Roman'?'Ji! ':'Hi! ';return{reply:h+(i?`${i.name} is PKR ${i.price}. ${i.desc}. Shall I place the order?`:/price|rate|kitna|cost/.test(q)&&p.length?`Our prices start from PKR ${Math.min(...p)}. Which item interests you?`:`Welcome to ${cfg.bname}! ${cfg.qual.split('?')[0]}?`)}}),
+ wa:()=>call('GET','/whatsapp/config',null,()=>({...MEM.wa})),
+ saveWa:w=>call('PUT','/whatsapp/config',w,()=>{Object.assign(MEM.wa,w);return{ok:true}}),
+ waTest:w=>call('POST','/whatsapp/test',w,()=>{MEM.wa.status=w.phoneId&&w.waba&&w.token.length>10?'connected':'error';return{status:MEM.wa.status}}),
+ waSend:n=>call('POST','/whatsapp/test-message',{to:n},()=>{if(MEM.wa.status!=='connected')throw new Error('Connect WhatsApp first');if(n.replace(/\D/g,'').length<10)throw new Error('Enter a valid number');return{ok:true}}),
+ ads:()=>call('GET','/ads/campaigns',null,()=>structuredClone(MEM.ads)),
+ adsConnect:v=>call('PUT','/ads/connection',{connected:v},()=>{MEM.ads.connected=v;return{ok:true}}),
+ settings:()=>call('GET','/settings',null,()=>structuredClone(MEM.st)),
+ saveSettings:s=>call('PUT','/settings',s,()=>{MEM.st=structuredClone(s);return{ok:true}}),
+ billing:()=>call('GET','/billing',null,()=>({plan:S.V.plan,used:S.V.used,limit:S.V.limit,renewal:'1 Nov 2026',invoices:[{id:'INV-1042',d:'1 Oct 2026',amt:14999,s:'Paid'},{id:'INV-1031',d:'1 Sep 2026',amt:14999,s:'Paid'},{id:'INV-1019',d:'1 Aug 2026',amt:4999,s:'Paid'}]})),
+ setPlan:(p,lim)=>call('PUT','/billing/plan',{plan:p},()=>{S.V.plan=p;S.V.limit=lim;return{ok:true}})});
+
+/* ===== shared UI helpers ===== */
+const card=(h,b,c='')=>`<div class="glass rounded-2xl p-4 ${c}"><h3 class="text-sm font-semibold mb-3">${h}</h3>${b}</div>`;
+const fld=(l,id,v='',tp='text')=>`<label class="block text-xs text-slate-400">${l}<input id="${id}" type="${tp}" value="${esc(v)}" class="w-full mt-1"></label>`;
+const bar=(l,v,max,c='bg-ac')=>`<div class="mb-2"><div class="flex justify-between text-xs"><span>${esc(l)}</span><span class="text-slate-400">${v}</span></div><div class="h-1.5 bg-white/10 rounded"><div class="${c} h-full rounded" style="width:${Math.round(v/max*100)}%"></div></div></div>`;
+const pill=(s,c)=>`<span class="px-2 py-0.5 rounded-full text-xs ${c}">${s}</span>`;
+const cp=async v=>{try{await navigator.clipboard.writeText(v);toast('Copied','ok')}catch(e){toast('Copy blocked by browser')}};
+const dlf=(n,txt,type='text/plain')=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=n;a.click();toast('Download started','ok')};
+const wrap=async(m,f)=>{m.innerHTML=sk('h-64');try{await f()}catch(e){m.innerHTML=`<p class="text-red-300 text-center py-10">${esc(e.message)}</p>`;toast(e.message)}};
+const chartOpts=()=>{Chart.defaults.color='#a8a2c4';S.ch.forEach(c=>c.destroy());const g={grid:{color:'rgba(255,255,255,.06)'}};return{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:g,y:g}}};
+
+/* ===== 4. Conversations ===== */
+PG.inbox=m=>wrap(m,async()=>{
+ let L=await api.convs(),sel=null,flt='all',msgs=[];
+ const bub=c=>`<div class="flex ${c.r==='c'?'':'justify-end'}" dir="ltr"><div class="max-w-[80%] rounded-2xl px-3 py-2 text-sm ${c.r==='c'?'bg-white/10':c.r==='ai'?'bg-ac/20':'bg-purple-500/30'}"><p class="text-[10px] opacity-60">${c.r==='c'?'Customer':c.r==='ai'?'AI Agent':'You'}</p>${esc(c.m)}<p class="text-[10px] opacity-50 mt-1">${clock(c.ts)}</p></div></div>`;
+ const ui=()=>{const keep=$('#ci')?.value||'',sl=L.find(x=>x.id===sel),vis=L.filter(l=>flt==='all'||(flt==='ai'?l.ai:!l.ai));
+  m.innerHTML=`<div class="grid md:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_260px] gap-3 h-[calc(100vh-120px)] min-h-[420px]">
+ <div class="glass rounded-2xl flex flex-col overflow-hidden ${sel?'hidden md:flex':''}"><div class="p-2 flex gap-1 flex-wrap">${[['all','All'],['ai','AI-handled'],['hu','Needs human']].map(([k,n])=>`<button data-f="${k}" class="btn text-xs ${flt===k?'pri':''}">${n}</button>`).join('')}</div><ul class="overflow-auto flex-1">${vis.map(l=>`<li><button data-c="${l.id}" class="w-full flex gap-2 p-3 text-start hover:bg-white/5 ${l.id===sel?'bg-white/10':''}">${srcIco(l.source)}<span class="min-w-0 flex-1"><span class="flex justify-between"><b class="text-sm truncate">${esc(l.name)}</b><span class="text-[10px] text-slate-500">${when(l.ts)}</span></span><span class="block truncate text-xs text-slate-400">${esc(l.last)}</span>${l.ai?'':'<span class="text-[10px] text-purple-300">Human</span>'}</span>${l.unread?`<span class="self-center text-[10px] bg-ac text-bg rounded-full px-1.5">${l.unread}</span>`:''}</button></li>`).join('')||`<p class="p-6 text-xs text-slate-500 text-center">${t('empty')}</p>`}</ul></div>
+ <div class="glass rounded-2xl flex flex-col overflow-hidden ${sel?'':'hidden md:flex'}">${sl?`<div class="flex items-center gap-2 p-3 border-b border-white/10"><button id="bk" class="btn md:hidden" aria-label="Back"><i data-lucide="arrow-left" class="h-4 w-4"></i></button><b class="flex-1 truncate">${esc(sl.name)}</b>${sl.ai?pill('AI active',SC.won):pill('Human in control',SC.proposal)}${sl.ai?'':`<button id="rsm" class="btn text-xs">${t('resume')}</button>`}</div><div id="ms" class="flex-1 overflow-auto p-3 space-y-2">${msgs.map(bub).join('')||`<p class="text-xs text-slate-500 text-center">${t('empty')}</p>`}</div><form id="cf" class="p-3 border-t border-white/10 flex gap-2"><input id="ci" class="flex-1" placeholder="Type a reply (pauses AI)" aria-label="Message" autocomplete="off"><button class="btn pri">Send</button></form>`:'<p class="m-auto text-slate-500 text-sm">Select a conversation</p>'}</div>
+ ${sl?`<aside class="hidden xl:block glass rounded-2xl p-4 text-sm space-y-2 overflow-auto"><h3 class="font-semibold">${esc(sl.name)}</h3><p class="text-slate-400" dir="ltr">${esc(sl.phone)}</p>${badge(tag(sl))}<p>${t('value')}: <b>${money(sl.value)}</b></p><p>AI score: <b>${sl.score}</b></p><p>${t('assign')}: ${esc(sl.agent)}</p><p class="text-xs text-slate-400">${esc(sl.summary)}</p><button class="btn w-full" data-view="${sl.id}">${t('view')}</button></aside>`:'<div class="hidden xl:block"></div>'}</div>`;
+  if($('#ci'))$('#ci').value=keep;const ms=$('#ms');if(ms)ms.scrollTop=ms.scrollHeight;icons();
+  $$('[data-f]',m).forEach(b=>b.onclick=()=>{flt=b.dataset.f;ui()});
+  $$('[data-c]',m).forEach(b=>b.onclick=async()=>{sel=b.dataset.c;try{msgs=await api.msgs(sel);L=await api.convs()}catch(e){toast(e.message)}ui()});
+  $('#bk')&&($('#bk').onclick=()=>{sel=null;ui()});
+  $('#rsm')&&($('#rsm').onclick=async()=>{try{await api.patch(sel,{ai:true});sl.ai=true;ui()}catch(e){toast(e.message)}});
+  $('#cf')&&($('#cf').onsubmit=async e=>{e.preventDefault();const v=$('#ci').value.trim();if(!v)return;try{await api.send(sel,v);msgs.push({r:'human',m:v,ts:Date.now()});sl.ai=false;$('#ci').value='';ui();toast('AI paused for this lead','ok')}catch(x){toast(x.message)}})};
+ ui();
+ S.timer=setInterval(async()=>{if(S.page!=='inbox')return;try{await api.poll();L=await api.convs();if(sel)msgs=await api.msgs(sel);ui()}catch(e){}},12000)});
+
+/* ===== 5. AI Insights ===== */
+PG.insights=m=>wrap(m,async()=>{const d=await api.insights(),mx=d.funnel[0][1];
+ m.innerHTML=`<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">${[['AI response accuracy',d.acc+'%','text-green-400'],['Human handoff rate',d.handoff+'%','text-amber-300'],['Avg first response','4.2s','text-ac'],['Resolved by AI','78%','text-purple-300']].map(([a,b,c])=>`<div class="glass rounded-2xl p-4"><p class="text-xs text-slate-400">${a}</p><p class="text-2xl font-bold ${c}">${b}</p></div>`).join('')}</div>
+ <div class="grid lg:grid-cols-2 gap-3">${card('Top customer questions',d.questions.map(([a,b])=>bar(a,b,d.questions[0][1])).join(''))}${card('Objections detected',d.objections.map(([a,b])=>bar(a,b,d.objections[0][1],'bg-amber-400')).join(''))}${card('Best-performing hours (conversions)','<div class="relative h-48"><canvas id="ch"></canvas></div>')}${card('Conversion funnel',d.funnel.map(([a,b])=>bar(a,b,mx,'bg-purple-400')).join(''))}</div>
+ <h3 class="text-sm font-semibold mt-4 mb-2">Recommended actions</h3><div class="grid md:grid-cols-3 gap-3">${d.recs.map(([a,b])=>card(`<i data-lucide="lightbulb" class="inline h-4 w-4 text-amber-300"></i> ${a}`,`<p class="text-sm text-slate-300">${b}</p>`)).join('')}</div>`;
+ const o=chartOpts();S.ch=[new Chart($('#ch'),{type:'bar',data:{labels:d.hours.map((_,i)=>i+':00'),datasets:[{data:d.hours,backgroundColor:d.hours.map(v=>v>=17?'#22d3ee':'#4b4575'),borderRadius:3}]},options:o})];icons()});
+
+/* ===== 6. AI Agent configuration ===== */
+PG.agent=m=>wrap(m,async()=>{const r0=await api.aiCfg();let c=r0.cfg,vs=r0.versions,chat=[];
+ const col=()=>{const g=i=>$('#'+i).value;c={...c,niche:g('ni'),bname:g('bn'),desc:g('ds'),faqs:g('fq'),hours:g('hr'),tone:g('tn'),langs:g('lg'),qual:g('ql'),handoff:g('ho'),forbid:g('fb'),prompt:g('sp'),items:$$('[data-it]').map(r=>({name:$('[data-k=name]',r).value,price:+$('[data-k=price]',r).value||0,desc:$('[data-k=desc]',r).value,img:$('[data-k=img]',r).value}))}};
+ const pv=()=>{col();$('#pv').textContent=fill(c)},sel=(id,l,o,v)=>`<label class="block text-xs text-slate-400">${l}<select id="${id}" class="w-full mt-1">${o.map(n=>`<option ${n===v?'selected':''}>${n}</option>`).join('')}</select></label>`,ta=(id,l,v,r=2)=>`<label class="block text-xs text-slate-400 mt-3">${l}<textarea id="${id}" rows="${r}" class="w-full mt-1">${esc(v)}</textarea></label>`;
+ const ui=()=>{m.innerHTML=`<div class="grid xl:grid-cols-[1fr_380px] gap-3"><div class="space-y-3">
+ ${card('Business',`<div class="grid sm:grid-cols-2 gap-3">${fld('Business name','bn',c.bname)}${sel('ni','Niche (loads starter prompt)',Object.keys(NICHES),c.niche)}</div>${ta('ds','Business description',c.desc)}`)}
+ ${card('Products / services catalog',`<div class="space-y-2">${c.items.map((i,x)=>`<div data-it class="grid grid-cols-2 md:grid-cols-[1fr_90px_1.5fr_1.2fr_auto] gap-2"><input data-k="name" value="${esc(i.name)}" placeholder="Name" aria-label="Name"><input data-k="price" type="number" value="${i.price}" aria-label="Price"><input data-k="desc" value="${esc(i.desc)}" placeholder="Description" aria-label="Description"><input data-k="img" value="${esc(i.img)}" placeholder="Image URL" aria-label="Image URL"><button class="btn dng" data-rm="${x}" aria-label="Delete item"><i data-lucide="trash-2" class="h-4 w-4"></i></button></div>`).join('')||`<p class="text-xs text-slate-500">${t('empty')}</p>`}</div><button id="ai2" class="btn mt-2">+ Add item</button>`)}
+ ${card('Behavior',`<div class="grid sm:grid-cols-2 gap-3">${sel('tn','Tone',['Friendly','Professional','Urdu-Roman','English'],c.tone)}${fld('Languages','lg',c.langs)}${fld('Working hours','hr',c.hours)}${fld('Forbidden topics','fb',c.forbid)}</div>${ta('fq','FAQs',c.faqs)}${ta('ql','Qualification questions',c.qual)}${ta('ho','Handoff rules',c.handoff)}`)}
+ ${card('System prompt',`<p class="text-xs text-slate-400 mb-2">Variables: {{business_name}} {{description}} {{products}} {{faqs}} {{hours}} {{tone}} {{qualification}} {{handoff}} {{forbidden}}</p><textarea id="sp" rows="9" class="w-full font-mono text-xs">${esc(c.prompt)}</textarea><div class="flex flex-wrap gap-2 mt-2"><button id="sv2" class="btn pri">${t('save')}</button><button id="rs" class="btn">Reset to niche template</button></div>`)}
+ </div><div class="space-y-3">${card('Live preview',`<pre id="pv" class="text-xs whitespace-pre-wrap text-slate-300 max-h-60 overflow-auto"></pre>`)}${card('Test chat sandbox',`<div class="space-y-2 max-h-56 overflow-auto text-sm" dir="ltr">${chat.map(x=>`<p class="rounded-xl px-3 py-1.5 ${x.u?'bg-white/10':'bg-ac/20'}">${esc(x.m)}</p>`).join('')||'<p class="text-xs text-slate-500">Try: price?</p>'}</div><div class="flex gap-2 mt-2"><input id="ti" class="flex-1" aria-label="Test message"><button id="ts" class="btn">Send</button></div>`)}${card('Version history',`<ul class="text-sm space-y-1">${vs.map((v,x)=>`<li class="flex justify-between items-center">${clock(v.ts)}<button class="btn text-xs" data-rv="${x}">Restore</button></li>`).join('')||`<li class="text-xs text-slate-500">${t('empty')}</li>`}</ul>`)}</div></div>`;
+  pv();icons();
+  $$('input,textarea,select',m).forEach(e=>{if(e.id!=='ti'&&e.id!=='ni')e.addEventListener('input',pv)});
+  $('#ni').onchange=async e=>{const v=e.target.value;if(!await confirmBox('Load the starter prompt for '+v+'? Your prompt edits will be replaced.')){$('#ni').value=c.niche;return}col();c.niche=v;c.prompt=tpl(v);ui()};
+  $('#ai2').onclick=()=>{col();c.items.push({name:'',price:0,desc:'',img:''});ui()};
+  $$('[data-rm]',m).forEach(b=>b.onclick=async()=>{if(!await confirmBox('Delete this item?'))return;col();c.items.splice(+b.dataset.rm,1);ui()});
+  $('#sv2').onclick=async()=>{col();try{await api.saveAi(c);vs=(await api.aiCfg()).versions;ui();toast('Saved as new version','ok')}catch(e){toast(e.message)}};
+  $('#rs').onclick=()=>{col();c.prompt=tpl(c.niche);ui()};
+  $$('[data-rv]',m).forEach(b=>b.onclick=()=>{c=structuredClone(vs[+b.dataset.rv].cfg);ui();toast('Version restored (not saved yet)','ok')});
+  $('#ts').onclick=async()=>{const v=$('#ti').value.trim();if(!v)return;col();chat.push({u:1,m:v});try{chat.push({m:(await api.aiTest(c,v)).reply})}catch(e){toast(e.message)}ui()}};
+ ui()});
+
+/* ===== 7. WhatsApp ===== */
+PG.whatsapp=m=>wrap(m,async()=>{let w=await api.wa(),show=false;
+ const sync=()=>{w.phoneId=$('#pn').value;w.waba=$('#wb').value;w.token=$('#tk').value};
+ const ui=()=>{const st={connected:['Connected',SC.won],disconnected:['Disconnected',SC.new],error:['Error',SC.lost]}[w.status];
+  m.innerHTML=`<div class="flex items-center gap-2 mb-3"><h3 class="font-semibold">WhatsApp Cloud API</h3>${pill(st[0],st[1])}</div><div class="grid lg:grid-cols-2 gap-3">
+ ${card('Cloud API setup',`<div class="space-y-3">${fld('Phone Number ID','pn',w.phoneId)}${fld('WABA ID','wb',w.waba)}<label class="block text-xs text-slate-400">Permanent access token<span class="flex gap-2 mt-1"><input id="tk" type="${show?'text':'password'}" value="${esc(w.token)}" autocomplete="off" class="flex-1"><button id="sh" class="btn" aria-label="Show or hide token"><i data-lucide="${show?'eye-off':'eye'}" class="h-4 w-4"></i></button></span></label>${[['Webhook URL','wu',w.webhook],['Verify token','vt2',w.verify]].map(([l,i,v])=>`<label class="block text-xs text-slate-400">${l}<span class="flex gap-2 mt-1"><input id="${i}" readonly value="${esc(v)}" class="flex-1"><button class="btn" data-cp="${i}" aria-label="Copy ${l}"><i data-lucide="copy" class="h-4 w-4"></i></button></span></label>`).join('')}<div class="flex flex-wrap gap-2"><button id="sv3" class="btn pri">${t('save')}</button><button id="tc2" class="btn">Test Connection</button></div>${fld('Test recipient (e.g. 923001234567)','tn2','','tel')}<button id="tm" class="btn">Send Test Message</button></div>`)}
+ <div class="space-y-3">${card('Message templates',`<table class="w-full text-sm"><thead class="text-xs text-slate-400"><tr><th class="text-start p-1">Name</th><th>Status</th><th>Quality</th></tr></thead><tbody>${w.templates.map(x=>`<tr class="border-t border-white/5"><td class="p-1">${x.n}</td><td class="text-center">${pill(x.s,x.s==='APPROVED'?SC.won:x.s==='PENDING'?SC.proposal:SC.lost)}</td><td class="text-center">${pill(x.q,x.q==='High'?SC.won:x.q==='Medium'?SC.proposal:SC.new)}</td></tr>`).join('')}</tbody></table>`)}
+ ${card('Alternative: QR connection <span class="text-xs text-amber-300">unofficial</span>',`<p class="text-xs text-slate-400 mb-3">Links a WhatsApp Web session. Not supported by Meta and accounts can be banned. Use the Cloud API for production. Demo QR shown; your backend supplies the real one.</p><div class="grid gap-px w-40 mx-auto bg-white p-2 rounded" style="grid-template-columns:repeat(15,1fr)">${Array.from({length:225},(_,i)=>`<i class="aspect-square ${Math.sin(i*12.9)>.1?'bg-black':'bg-white'}"></i>`).join('')}</div>`)}</div></div>`;icons();
+  $('#sh').onclick=()=>{sync();show=!show;ui()};
+  $$('[data-cp]',m).forEach(b=>b.onclick=()=>cp($('#'+b.dataset.cp).value));
+  $('#sv3').onclick=async()=>{sync();try{await api.saveWa(w);toast('Saved','ok')}catch(e){toast(e.message)}};
+  $('#tc2').onclick=async()=>{sync();try{w.status=(await api.waTest(w)).status;ui();toast(w.status==='connected'?'Connection OK':'Connection failed: check IDs and token',w.status==='connected'?'ok':'err')}catch(e){toast(e.message)}};
+  $('#tm').onclick=async()=>{try{await api.waSend($('#tn2').value);toast('Test message queued','ok')}catch(e){toast(e.message)}}};
+ ui()});
+
+/* ===== 8. Ads attribution ===== */
+PG.ads=m=>wrap(m,async()=>{const d=await api.ads(),cr=d.campaigns.map(c=>({...c,cpl:c.spend/c.leads,roas:c.rev/c.spend}));
+ const hd=`<div class="flex items-center gap-2 mb-3"><h3 class="font-semibold flex-1">Facebook / Instagram Ads</h3>${pill(d.connected?'Connected':'Disconnected',d.connected?SC.won:SC.new)}<button id="ct" class="btn pri">${d.connected?'Disconnect':'Connect Meta Ads'}</button></div>`;
+ m.innerHTML=hd+(d.connected?`<div class="grid lg:grid-cols-2 gap-3 mb-3">${card('Spend vs revenue by campaign','<div class="relative h-56"><canvas id="a1"></canvas></div>')}${card('Revenue by source','<div class="relative h-56"><canvas id="a2"></canvas></div>')}</div>${card('Campaigns',`<div class="overflow-x-auto"><table class="w-full text-sm min-w-[620px]"><thead class="text-xs text-slate-400"><tr>${['Campaign','Spend','Leads','CPL','Conv.','Revenue','ROAS'].map(h=>`<th class="p-2 text-start">${h}</th>`).join('')}</tr></thead><tbody>${cr.map(c=>`<tr class="border-t border-white/5"><td class="p-2">${esc(c.n)}</td><td>${money(c.spend)}</td><td>${c.leads}</td><td>${money(c.cpl)}</td><td>${c.conv}</td><td>${money(c.rev)}</td><td class="${c.roas>=3?'text-green-300':c.roas>=1.5?'text-amber-300':'text-red-300'}">${c.roas.toFixed(1)}x</td></tr>`).join('')}</tbody></table></div>`)}`:`<p class="text-center text-slate-500 py-16">${t('empty')}</p>`);
+ $('#ct').onclick=async()=>{try{await api.adsConnect(!d.connected);PG.ads(m)}catch(e){toast(e.message)}};
+ if(d.connected){const o=chartOpts(),by=s=>cr.filter(c=>c.src===s).reduce((a,c)=>a+c.rev,0);o.plugins.legend={display:true};
+  S.ch=[new Chart($('#a1'),{type:'bar',data:{labels:cr.map(c=>c.n),datasets:[{label:'Spend',data:cr.map(c=>c.spend),backgroundColor:'#a78bfa'},{label:'Revenue',data:cr.map(c=>c.rev),backgroundColor:'#22d3ee'}]},options:o}),new Chart($('#a2'),{type:'doughnut',data:{labels:['facebook','instagram'],datasets:[{data:[by('facebook'),by('instagram')],backgroundColor:['#60a5fa','#f472b6'],borderWidth:0}]},options:{maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom'}}}})]}
+ icons()});
+
+/* ===== 9. Settings ===== */
+PG.settings=m=>wrap(m,async()=>{let s=await api.settings();
+ const sync=()=>{s.name=$('#pf').value;s.email=$('#pe').value;s.business=$('#pb').value;s.phone=$('#pp').value;s.tz=$('#tz').value;s.currency=$('#cur').value;s.lang=$('#lng').value;s.notif=$$('[data-n]').map(x=>x.checked)};
+ const persist=async(msg)=>{sync();await api.saveSettings(s);if(msg)toast(msg,'ok')},sl=(i,l,o,v)=>`<label class="block text-xs text-slate-400">${l}<select id="${i}" class="w-full mt-1">${o.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select></label>`;
+ const ui=()=>{m.innerHTML=`<div class="grid lg:grid-cols-2 gap-3">${card('Profile & business',`<div class="space-y-3">${fld('Your name','pf',s.name)}${fld('Email','pe',s.email,'email')}${fld('Business name','pb',s.business)}${fld('Business phone','pp',s.phone,'tel')}</div>`)}${card('Regional',`<div class="space-y-3">${sl('tz','Timezone',['Asia/Karachi','Asia/Dubai','Europe/London','America/New_York'],s.tz)}${sl('cur','Currency',['PKR','USD','AED','GBP'],s.currency)}${sl('lng','Language',['en','ur'],s.lang)}</div>`)}
+ ${card('Team members',`<ul class="space-y-2 text-sm">${s.team.map((u,x)=>`<li class="flex items-center gap-2"><span class="flex-1 truncate">${esc(u.email)}</span>${pill(u.role,SC.qualified)}${u.role!=='owner'?`<button class="btn dng text-xs" data-rm="${x}">Remove</button>`:''}</li>`).join('')}</ul><div class="flex gap-2 mt-3"><input id="ie" type="email" placeholder="invite@email.com" aria-label="Invite email" class="flex-1 min-w-0"><select id="ir" aria-label="Role"><option>agent</option><option>owner</option></select><button id="inv" class="btn">Invite</button></div>`)}
+ ${card('Notifications',['New hot lead','Human handoff needed','Daily summary email'].map((n,x)=>`<label class="flex justify-between py-1 text-sm">${n}<input type="checkbox" data-n="${x}" ${s.notif[x]?'checked':''}></label>`).join(''))}
+ ${card('API keys',`<ul class="space-y-2 text-sm">${s.keys.map((k,x)=>`<li class="flex items-center gap-2"><code class="flex-1 truncate text-xs">${k.slice(0,8)}••••••••${k.slice(-4)}</code><button class="btn text-xs" data-ck="${x}">Copy</button><button class="btn dng text-xs" data-rk="${x}">Revoke</button></li>`).join('')||`<li class="text-xs text-slate-500">${t('empty')}</li>`}</ul><button id="gk" class="btn mt-2">Generate key</button>`)}
+ ${card('Save & data',`<div class="flex flex-wrap gap-2"><button id="sv4" class="btn pri">${t('save')}</button><button id="dx" class="btn">Export my data (JSON)</button></div>`)}</div>`;icons();
+  const run=f=>async(...a)=>{try{await f(...a)}catch(e){toast(e.message)}};
+  $('#sv4').onclick=run(async()=>{await persist('Settings saved');S.V.business=s.business;S.V.name=s.business||S.V.name;S.V.currency=s.currency;S.V.tz=s.tz;S.lang=s.lang;shell();route()});
+  $('#inv').onclick=run(async()=>{const e=$('#ie').value.trim();if(!/^\S+@\S+\.\S+$/.test(e))throw new Error('Enter a valid email');sync();s.team.push({email:e,role:$('#ir').value});await persist('Invitation sent');ui()});
+  $$('[data-rm]',m).forEach(b=>b.onclick=run(async()=>{if(!await confirmBox('Remove this team member?'))return;sync();s.team.splice(+b.dataset.rm,1);await persist('Member removed');ui()}));
+  $('#gk').onclick=run(async()=>{sync();s.keys.push('sk_live_'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10));await persist('Key generated');ui()});
+  $$('[data-ck]',m).forEach(b=>b.onclick=()=>cp(s.keys[+b.dataset.ck]));
+  $$('[data-rk]',m).forEach(b=>b.onclick=run(async()=>{if(!await confirmBox('Revoke this API key? Apps using it will stop working.'))return;sync();s.keys.splice(+b.dataset.rk,1);await persist('Key revoked');ui()}));
+  $('#dx').onclick=run(async()=>dlf('salesos-export.json',JSON.stringify({leads:await api.leads(),settings:s},null,2),'application/json'))};
+ ui()});
+
+/* ===== 10. Billing ===== */
+PG.billing=m=>wrap(m,async()=>{const b=await api.billing(),pc=Math.round(b.used/b.limit*100),PL=[['Free',0,100,'1 WhatsApp number · 100 AI messages'],['Starter',4999,1000,'3 agents · 1,000 AI messages'],['Pro',14999,10000,'10 agents · 10,000 AI messages · Ads attribution']],ci=PL.findIndex(p=>p[0]===b.plan);
+ m.innerHTML=`${card('Current plan',`<div class="flex flex-wrap items-center gap-3"><b class="text-2xl">${b.plan}</b><span class="text-xs text-slate-400">Renews ${b.renewal}</span></div><div class="flex justify-between text-xs text-slate-400 mt-3"><span>${t('usage')}</span><span>${b.used}/${b.limit}</span></div><div class="h-2 bg-white/10 rounded mt-1"><div class="h-full bg-ac rounded" style="width:${pc}%"></div></div>`)}
+ <div class="grid md:grid-cols-3 gap-3 my-3">${PL.map((p,i)=>card(p[0],`<p class="text-2xl font-bold">${p[1]?money(p[1]):'Free'}<span class="text-xs text-slate-400">${p[1]?' /mo':''}</span></p><p class="text-sm text-slate-300 my-3">${p[3]}</p><button class="btn w-full ${i>ci?'pri':''}" data-pl="${i}" ${i===ci?'disabled':''}>${i===ci?'Current plan':i>ci?'Upgrade':'Downgrade'}</button>`,i===ci?'ring-2 ring-ac':'')).join('')}</div>
+ <div class="grid lg:grid-cols-[2fr_1fr] gap-3">${card('Invoice history',`<table class="w-full text-sm"><thead class="text-xs text-slate-400"><tr><th class="text-start p-1">Invoice</th><th class="text-start">Date</th><th class="text-start">Amount</th><th>Status</th><th></th></tr></thead><tbody>${b.invoices.map(v=>`<tr class="border-t border-white/5"><td class="p-1">${v.id}</td><td>${v.d}</td><td>${money(v.amt)}</td><td class="text-center">${pill(v.s,SC.won)}</td><td><button class="btn text-xs" data-iv="${v.id}">Download</button></td></tr>`).join('')}</tbody></table>`)}${card('Payment method',`<p class="text-sm text-slate-400 mb-3">No card on file. Connect your payment gateway on the backend.</p><button class="btn" id="pm">Add payment method</button>`)}</div>`;
+ $('#pm').onclick=()=>toast('Payment gateway not connected yet');
+ $$('[data-iv]',m).forEach(x=>x.onclick=()=>{const v=b.invoices.find(i=>i.id===x.dataset.iv);dlf(v.id+'.txt',`${v.id}\n${v.d}\nAmount: ${money(v.amt)}\nStatus: ${v.s}`)});
+ $$('[data-pl]',m).forEach(x=>x.onclick=async()=>{const p=PL[+x.dataset.pl];if(!await confirmBox(`Switch to the ${p[0]} plan?`))return;try{await api.setPlan(p[0],p[2]);shell();route();toast('Plan changed to '+p[0],'ok')}catch(e){toast(e.message)}});icons()});
+
+/* ===== start ===== */
+S.tok=store.get('tok');S.tok?(S.user={email:'demo',role:'owner'},S.V={name:'Demo User',plan:'Pro',used:320,limit:1000,currency:'PKR',tz:'Asia/Karachi'},boot()):login();
+</script></body></html>
